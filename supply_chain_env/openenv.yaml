@@ -1,0 +1,25 @@
+name: supply-chain-env
+version: "0.1.0"
+description: >
+  Supply Chain Disruption Management — agent acts as procurement manager
+  handling supplier failures, budget constraints, and customer commitments.
+  Every action changes the world. Every delay costs real money.
+
+tags:
+  - supply-chain
+  - procurement
+  - real-world
+  - multi-step
+
+action_space: discrete
+observation_space: structured
+
+tasks:
+  - easy
+  - medium
+  - hard
+
+server:
+  image: supply-chain-env:latest
+  port: 8000
+  healthcheck: /health

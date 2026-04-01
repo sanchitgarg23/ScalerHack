@@ -1,0 +1,5 @@
+.env
+supply_chain_env/.env
+__pycache__/
+*.pyc
+env/

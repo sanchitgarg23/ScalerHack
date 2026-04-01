@@ -1,0 +1,162 @@
+---
+title: Supply Chain Disruption Management Environment
+emoji: 📦
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+tags: [openenv, reinforcement-learning, supply-chain, rl-environment]
+---
+
+# 📦 Supply Chain Disruption Management Environment
+
+An OpenEnv-compatible reinforcement learning environment where an AI agent acts as a **procurement manager** navigating real-time supply chain disruptions. Suppliers fail without warning, budgets drain with every decision, customer deadlines loom, and scam vendors lurk — every action changes the world, and every delay costs real money. The environment is designed to train and evaluate agents that can reason under uncertainty, negotiate dynamically, and make multi-step plans with irreversible consequences.
+
+Unlike toy RL benchmarks, this environment models the messy reality of enterprise procurement: partial observability (you must *query* suppliers to learn their status), adversarial actors (a scam supplier that fakes availability), cascading failures (one supplier going down triggers others), and demand volatility (order quantities spike mid-episode). The reward signal is carefully shaped to encourage intelligent behavior — not just task completion, but *how* the agent completes it.
+
+---
+
+## 🎯 Action Space
+
+The agent can take one of 7 discrete actions each step:
+
+| Action Type | Target | Description | Cost |
+|---|---|---|---|
+| `query_supplier` | Supplier name | Reveals supplier's real status (active/failed/delayed/scam). Scam suppliers show contradictory stock on repeat queries. | 0 budget, 1 step |
+| `place_order` | Supplier name | Purchases `quantity` units at `price` per unit. Deducts budget, creates pending delivery with ETA. | Budget = qty × price |
+| `negotiate_price` | Supplier name | Attempts to negotiate a lower price. 40% chance price drops 10–20%. | 0 budget, 1 step |
+| `notify_customer` | Order ID | Proactively notifies customer about delays. Reduces late-delivery penalty by 50%. | 0 budget, 1 step |
+| `expedite_shipment` | Supplier/delivery ID | Speeds delivery by 2 days. Costs 30% premium on original order. | 30% of order cost |
+| `cancel_order` | Supplier/delivery ID | Cancels a pending delivery. 70% of original cost refunded. | −70% refund |
+| `declare_done` | — | Ends the episode immediately. Triggers final grading. | 0 |
+
+## 👁️ Observation Space
+
+Each step returns a `SupplyChainObservation` with these fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `day` | `int` | Current simulation day |
+| `budget_remaining` | `float` | Remaining procurement budget ($) |
+| `inventory` | `Dict[str, int]` | SKU → units currently in warehouse |
+| `suppliers` | `List[SupplierInfo]` | Name, status, stock, price, delivery days, reliability |
+| `customer_orders` | `List[CustomerOrder]` | Order ID, SKU, quantity, deadline, fulfilled/notified flags |
+| `last_action_result` | `str` | Human-readable result of the last action |
+| `alerts` | `List[str]` | System alerts (deliveries, disruptions, fulfilments) |
+| `market_conditions` | `str` | `"stable"` / `"volatile"` / `"crisis"` |
+
+## 📋 Task Descriptions
+
+### Task 0 — Easy: Supplier Recovery
+- **Scenario:** 1 of 3 suppliers has failed. 1 customer order to fulfil.
+- **Budget:** $50,000 (generous)
+- **Challenge:** Find the working supplier and place an order on time.
+- **Baseline score:** ~0.85
+
+### Task 1 — Medium: Multi-Failure Triage
+- **Scenario:** 3 of 5 suppliers have failed. 2 customer orders with tight deadlines.
+- **Budget:** $25,000 (constrained)
+- **Challenge:** Triage limited supply across multiple orders. Negotiate to stretch budget.
+- **Baseline score:** ~0.60
+
+### Task 2 — Hard: Cascading Crisis
+- **Scenario:** Cascading failures, 1 scam supplier (Ghost Trading), demand spike at step 10.
+- **Budget:** $18,000 (razor-thin)
+- **Challenge:** Detect the scam (query twice on different days → contradictory stock), handle demand spikes, fulfil 3 orders under extreme pressure.
+- **Baseline score:** ~0.30 (random LLM agent scores ~0.20–0.35)
+
+## 📊 Baseline Scores
+
+| Task | Difficulty | Baseline Score | Description |
+|---|---|---|---|
+| 0 | Easy | ~0.85 | Simple recovery — most agents solve this |
+| 1 | Medium | ~0.60 | Requires budget management + negotiation |
+| 2 | Hard | ~0.30 | Scam detection + spike handling required |
+
+## 🚀 Setup & Usage
+
+### Install from source
+
+```bash
+cd supply_chain_env
+pip install -e .
+```
+
+### Run with Docker
+
+```bash
+# Build
+docker build -t supply-chain-env -f server/Dockerfile .
+
+# Run
+docker run -p 8000:8000 supply-chain-env
+
+# Verify
+curl http://localhost:8000/health
+# → {"status": "ok", ...}
+```
+
+### Basic usage (Python)
+
+```python
+from supply_chain_env import SupplyChainClient, SupplyChainAction
+
+# Connect to server
+client = SupplyChainClient(base_url="http://localhost:8000")
+
+# Start an episode (easy)
+obs = client.reset(task_id=0)
+print(f"Day {obs.day}, Budget: ${obs.budget_remaining:,.0f}")
+
+# Query a supplier
+obs, reward, done, info = client.step(
+    SupplyChainAction(action_type="query_supplier", target="Bravo Supplies")
+)
+print(obs.last_action_result)
+
+# Place an order
+obs, reward, done, info = client.step(
+    SupplyChainAction(
+        action_type="place_order",
+        target="Bravo Supplies",
+        quantity=100,
+    )
+)
+
+# Grade the episode when done
+result = client.grade(task_id=0)
+print(f"Score: {result['score']}/{result['max_score']}")
+```
+
+### WebSocket (persistent sessions)
+
+```python
+import asyncio
+from supply_chain_env import SupplyChainWSClient, SupplyChainAction
+
+async def main():
+    async with SupplyChainWSClient("ws://localhost:8000/ws") as client:
+        obs = await client.reset(task_id=2)
+        obs, reward, done, info = await client.step(
+            SupplyChainAction(action_type="query_supplier", target="Ghost Trading")
+        )
+        print(obs.last_action_result)
+
+asyncio.run(main())
+```
+
+## 🔌 API Endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/health` | GET | Health check (HF Spaces compatible) |
+| `/tasks` | GET | List all task descriptors |
+| `/reset` | POST | Start new episode: `{"task_id": 0\|1\|2}` |
+| `/step` | POST | Execute action (SupplyChainAction JSON) |
+| `/state` | GET | Current episode state |
+| `/grade` | POST | Grade a completed episode |
+| `/ws` | WS | Persistent session (max 50 concurrent) |
+
+## 📄 License
+
+MIT

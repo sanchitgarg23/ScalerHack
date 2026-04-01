@@ -1,0 +1,41 @@
+INFO:     Started server process [7148]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:56925 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:56928 - "POST /grade HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56930 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:56933 - "POST /grade HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56936 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:56939 - "POST /grade HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56953 - "GET / HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56957 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:56960 - "POST /grade HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56963 - "POST /grade HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56966 - "POST /grade HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     127.0.0.1:56973 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:56976 - "POST /grade HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56997 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57000 - "POST /grade HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57372 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57379 - "POST /grade HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57392 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57399 - "POST /grade HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57419 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57422 - "POST /grade HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57439 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57442 - "POST /grade HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57460 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57463 - "POST /grade HTTP/1.1" 200 OK
